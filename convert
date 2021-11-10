@@ -1,0 +1,65 @@
+#!/bin/bash
+
+optstring=":ht:f:"
+
+
+function usage {
+        echo "Usage: $(basename $0) -f | -t file | -h file " 2>&1
+        echo '   -f   convert from hs to lhs'
+        echo '   -t   convert to hs from lhs'
+        echo '   -h   shows usage'
+        exit 1
+}
+
+function error_msg {
+        echo "Convert Haskell and Literal Haskell Scripts " 2>&1
+        echo -e "Try 'convert -h' for more information."
+        exit 1
+}
+
+function from () {
+        conv=$(sed -E 's/^\{-(.+)$/\{-\n\1/g' $1.hs | sed -E 's/^(.+)-\}$/\1\n-\}/g' | sed -E '/\{-/,/-\}/{/\{-/d;/-\}/d;s/^\ *(.*)/-- \1/g}' | sed -E 's/^([^-].*)$/> \1/g' | sed -E 's/^--\ ?(.*)/\1/g' | sed -E 's/^>\s+$//g' | tee $1.lhs)
+        lines=$(sed -En '{N;/^>.*\n[^>].*/p;/^>.*\n[^>].*/q;D;}' $1.lhs | sed -E 's/^([^>].*)/-- \1/g;s/^> (.*)$/\1/g;' )
+        [ -n "$lines" ] && echo -e "Please insert a new line between the following lines to make it compileable:\n--------\n$lines\n--------\nwhen done, execute convert again!" 1>&2 && exit 2 
+        echo "Conversion successful!"
+        exit 0
+}
+
+function to () {
+        sed -E 's/(^[^>].*)/--\s\1/g' $1.lhs | sed -E 's/^>\s(.*)/\1/g' > $1.hs
+        echo "Conversion successful!"
+        exit 0
+}
+
+function input () {
+        [ -z $2 ] && echo "No input specified" && exit 2
+        [ ! -f $2 ] && echo "$2 does not exist." && exit 2
+        format=$(echo $2 | grep $1 )
+        [ -z ${format} ] && echo "$2 is in the wrong format." && exit 2
+        ctr_str="s/(.*)"$1"/\1/g"
+        export name=$(echo $format | sed -E $ctr_str)               
+}
+
+
+while getopts $optstring arg; do
+  case $arg in
+    h)
+      usage
+      ;;
+    f)
+    input "\.hs" $OPTARG
+    from $name
+     ;;
+    t)
+    input "\.lhs" $OPTARG
+    to $name
+      ;;
+    ?)
+      echo -e "Invalid option: -$OPTARG."
+      usage
+      exit 2
+      ;;
+  esac
+done
+error_msg
+exit 2
