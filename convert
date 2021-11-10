@@ -18,9 +18,10 @@ function error_msg {
 }
 
 function from () {
-        conv=$(sed -E 's/^\{-(.+)$/\{-\n\1/g' $1.hs | sed -E 's/^(.+)-\}$/\1\n-\}/g' | sed -E '/\{-/,/-\}/{/\{-/d;/-\}/d;s/^\ *(.*)/-- \1/g}' | sed -E 's/^([^-].*)$/> \1/g' | sed -E 's/^--\ ?(.*)/\1/g' | sed -E 's/^>\s+$//g' | tee $1.lhs)
-        lines=$(sed -En '{N;/^>.*\n[^>].*/p;/^>.*\n[^>].*/q;D;}' $1.lhs | sed -E 's/^([^>].*)/-- \1/g;s/^> (.*)$/\1/g;' )
-        [ -n "$lines" ] && echo -e "Please insert a new line between the following lines to make it compileable:\n--------\n$lines\n--------\nwhen done, execute convert again!" 1>&2 && exit 2 
+        sed -E 's/^\{-(.+)$/\{-\n\1/g' $1.hs | sed -E 's/^(.+)-\}$/\1\n-\}/g'\
+            | sed -E '/^[^-].*$/,/^--.*$/{s/^(--.*)$/\n\1/g}'| sed -E '/^--.*$/,/^[^-].*$/{s/^([^-].*)/\n\1/g}' \
+            | sed -E '/\{-/,/-\}/{/\{-/d;/-\}/d;s/^\ *(.*)/-- \1/g}' | sed -E 's/^([^-].*)$/> \1/g' \
+            | sed -E 's/^--\ ?(.*)/\1/g' | sed -E 's/^>\s+$//g' > $1.lhs
         echo "Conversion successful!"
         exit 0
 }
