@@ -27,7 +27,7 @@ function from () {
 }
 
 function to () {
-        sed -E 's/(^[^>].*)/--\s\1/g' $1.lhs | sed -E 's/^>\s(.*)/\1/g' > $1.hs
+        sed -E 's/(^[^>].*)/-- \1/g' $1.lhs | sed -E 's/^>\s(.*)/\1/g' > $1.hs
         echo "Conversion successful!"
         exit 0
 }
